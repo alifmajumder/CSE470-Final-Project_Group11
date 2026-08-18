@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class TaskWorker extends Model
 {
@@ -15,6 +16,8 @@ class TaskWorker extends Model
         'completed_at',
         'employer_rating',
         'employer_review',
+        'completion_photo_path',
+        'completion_photo_uploaded_at',
     ];
 
     protected function casts(): array
@@ -22,6 +25,7 @@ class TaskWorker extends Model
         return [
             'joined_at' => 'datetime',
             'completed_at' => 'datetime',
+            'completion_photo_uploaded_at' => 'datetime',
         ];
     }
 
@@ -38,5 +42,17 @@ class TaskWorker extends Model
     public function isCompleted(): bool
     {
         return $this->status === 'completed';
+    }
+
+    public function hasCompletionPhoto(): bool
+    {
+        return ! empty($this->completion_photo_path);
+    }
+
+    public function completionPhotoUrl(): ?string
+    {
+        return $this->hasCompletionPhoto()
+            ? Storage::disk('public')->url($this->completion_photo_path)
+            : null;
     }
 }

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Validation\ValidationException;
 use App\Models\Notification;
+use Illuminate\Support\Facades\Storage;
 
 class TaskWorkerController extends Controller
 {
@@ -166,6 +167,40 @@ class TaskWorkerController extends Controller
         ]);
 
         return back()->with('success', "Worker application rejected.");
+    }
+
+    public function uploadCompletionPhoto(Request $request, Task $task, TaskWorker $taskWorker)
+    {
+        $this->authorizeBelongsToTask($task, $taskWorker);
+
+        abort_if($taskWorker->worker_id !== Auth::id(), 403, 'Only the assigned worker can upload proof of completion for this job.');
+
+        if ($taskWorker->status !== 'assigned') {
+            return back()->withErrors(['completion_photo' => 'You can only upload a completion photo while the job is assigned to you and not yet marked completed.']);
+        }
+
+        $validated = $request->validate([
+            'completion_photo' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
+
+        // Replace any previous photo for this job rather than piling up files.
+        if ($taskWorker->completion_photo_path) {
+            Storage::disk('public')->delete($taskWorker->completion_photo_path);
+        }
+
+        $path = $request->file('completion_photo')->store("completion_photos/{$task->id}", 'public');
+
+        $taskWorker->update([
+            'completion_photo_path' => $path,
+            'completion_photo_uploaded_at' => Date::now(),
+        ]);
+
+        Notification::create([
+            'user_id' => $task->employer_id,
+            'message' => "📸 {$taskWorker->worker->name} uploaded a completion photo for '{$task->title}'. Review it before marking the job complete.",
+        ]);
+
+        return back()->with('success', 'Completion photo uploaded. The employer will review it before marking the job complete.');
     }
 
     /**

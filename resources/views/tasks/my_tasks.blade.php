@@ -55,6 +55,16 @@
         .payment-line a:hover { text-decoration: underline; }
         .confirmed-tag { color: #276749; font-weight: 600; }
         .unconfirmed-tag { color: #a0aec0; }
+
+        /* FEATURE: Work Completion Photo Upload */
+        .proof-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e0; display: block; margin-bottom: 4px; }
+        .proof-missing { font-size: 12px; color: #a0aec0; font-style: italic; }
+        .proof-pending-note { font-size: 12px; color: #b7791f; font-weight: 600; margin-top: 4px; }
+        .completion-photo-form { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #cbd5e0; }
+        .completion-photo-form input[type="file"] { font-size: 13px; }
+        .completion-photo-preview { width: 140px; border-radius: 8px; border: 1px solid #cbd5e0; margin-top: 6px; display: block; }
+        .completion-photo-label { font-size: 13px; font-weight: 600; color: #4a5568; }
+        .completion-photo-uploaded-tag { font-size: 12px; color: #276749; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -108,6 +118,7 @@
                                 <th>Worker</th>
                                 <th>Phone</th>
                                 <th>Status</th>
+                                <th>Proof</th>
                                 <th>Payments</th>
                                 <th>Actions</th>
                             </tr>
@@ -136,6 +147,19 @@
                                     <td>{{ $tw->worker->phone ?? 'N/A' }}</td>
                                     <td><span class="worker-status {{ $tw->status }}">{{ $tw->status }}</span></td>
                                     <td>
+                                        {{-- FEATURE: Work Completion Photo Upload --}}
+                                        @if($tw->hasCompletionPhoto())
+                                            <a href="{{ $tw->completionPhotoUrl() }}" target="_blank" rel="noopener">
+                                                <img src="{{ $tw->completionPhotoUrl() }}" alt="Completion proof" class="proof-thumb">
+                                            </a>
+                                            <span class="completion-photo-uploaded-tag">Uploaded</span>
+                                        @elseif($tw->status === 'assigned')
+                                            <span class="proof-missing">Waiting on worker</span>
+                                        @else
+                                            <span class="proof-missing">&mdash;</span>
+                                        @endif
+                                    </td>
+                                    <td>
                                         @forelse($workerPayments as $p)
                                             <div class="payment-line">
                                                 <a href="{{ route('payments.receipt', $p) }}">৳{{ number_format($p->amount, 2) }} ({{ $p->methodLabel() }})</a>
@@ -162,13 +186,19 @@
                                                     <button type="submit" class="btn btn-danger btn-sm">Reject</button>
                                                 </form>
                                             @elseif($tw->status === 'assigned')
-                                                <form action="{{ route('tasks.workers.complete', [$task, $tw]) }}" method="POST" style="margin: 0;">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-success btn-sm">Mark Completed</button>
-                                                </form>
-                                                
-                                                <a href="{{ route('payments.create', [$task, $tw]) }}" class="btn btn-outline btn-sm">Record Payment</a>
-                                                
+                                                {{-- FEATURE: Work Completion Photo Upload --}}
+                                                {{-- Mark Completed / Record Payment are locked until the worker uploads proof. --}}
+                                                @if($tw->hasCompletionPhoto())
+                                                    <form action="{{ route('tasks.workers.complete', [$task, $tw]) }}" method="POST" style="margin: 0;">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-success btn-sm">Mark Completed</button>
+                                                    </form>
+
+                                                    <a href="{{ route('payments.create', [$task, $tw]) }}" class="btn btn-outline btn-sm">Record Payment</a>
+                                                @else
+                                                    <span class="proof-pending-note">⏳ Waiting for completion photo</span>
+                                                @endif
+
                                                 @if($workerPayments->isEmpty())
                                                     <form action="{{ route('tasks.workers.cancel', [$task, $tw]) }}" method="POST" onsubmit="return confirm('Remove this worker from the task?');" style="margin: 0;">
                                                         @csrf
@@ -228,6 +258,29 @@
                     👤 Employer: <strong>{{ $tw->task->employer->name ?? 'N/A' }}</strong> (📞 {{ $tw->task->employer->phone ?? 'N/A' }})
                 </div>
                 <p style="margin: 0; color: #4a5568; font-size: 14px;">{{ $tw->task->description }}</p>
+
+                {{-- FEATURE: Work Completion Photo Upload --}}
+                @if($tw->status === 'assigned')
+                    <div class="completion-photo-form">
+                        <span class="completion-photo-label">📸 Upload a photo of the finished work as proof for the employer:</span>
+
+                        @if($tw->hasCompletionPhoto())
+                            <img src="{{ $tw->completionPhotoUrl() }}" alt="Your completion photo" class="completion-photo-preview">
+                            <span class="completion-photo-uploaded-tag">Uploaded &mdash; you can replace it below until the employer marks the job completed.</span>
+                        @endif
+
+                        <form action="{{ route('tasks.workers.completion-photo', [$tw->task, $tw]) }}" method="POST" enctype="multipart/form-data" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            @csrf
+                            <input type="file" name="completion_photo" accept="image/png, image/jpeg, image/webp" required>
+                            <button type="submit" class="btn btn-success btn-sm">{{ $tw->hasCompletionPhoto() ? 'Replace Photo' : 'Upload Photo' }}</button>
+                        </form>
+                    </div>
+                @elseif($tw->hasCompletionPhoto())
+                    <div class="completion-photo-form">
+                        <span class="completion-photo-label">📸 Completion photo submitted:</span>
+                        <img src="{{ $tw->completionPhotoUrl() }}" alt="Your completion photo" class="completion-photo-preview">
+                    </div>
+                @endif
                 
                 <!-- FEATURE 11: Worker sees the rating they received! -->
                 @if($tw->employer_rating)

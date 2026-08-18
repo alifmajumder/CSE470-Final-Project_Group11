@@ -101,6 +101,16 @@ Route::post('/tasks/{task}/workers/{taskWorker}/reject', [TaskWorkerController::
 Route::post('/tasks/{task}/workers/{taskWorker}/rate', [TaskWorkerController::class, 'rateWorker'])
     ->middleware('auth')->name('tasks.workers.rate');
 
+
+// --------------------------------------------------------------------------
+// Feature: Work Completion Photo Upload
+// --------------------------------------------------------------------------
+// Worker uploads proof-of-work (e.g. a photo of the ploughed field) before
+// the employer is allowed to mark the job completed / release payment.
+
+Route::post('/tasks/{task}/workers/{taskWorker}/completion-photo', [TaskWorkerController::class, 'uploadCompletionPhoto'])
+    ->middleware('auth')->name('tasks.workers.completion-photo');
+
 // --------------------------------------------------------------------------
 // Feature: Payment Record & Receipt
 // --------------------------------------------------------------------------

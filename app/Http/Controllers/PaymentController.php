@@ -18,6 +18,7 @@ class PaymentController extends Controller
     {
         $this->authorizeOwner($task);
         $this->authorizeBelongsToTask($task, $taskWorker);
+        $this->authorizeCompletionPhotoExists($taskWorker);
 
         $taskWorker->load('worker');
 
@@ -35,6 +36,8 @@ class PaymentController extends Controller
     {
         $this->authorizeOwner($task);
         $this->authorizeBelongsToTask($task, $taskWorker);
+        $this->authorizeCompletionPhotoExists($taskWorker);
+
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01|max:9999999.99',
@@ -114,5 +117,12 @@ class PaymentController extends Controller
     private function authorizeBelongsToTask(Task $task, TaskWorker $taskWorker): void
     {
         abort_if($taskWorker->task_id !== $task->id, 404);
+    }
+
+    private function authorizeCompletionPhotoExists(TaskWorker $taskWorker): void
+    {
+        if (! $taskWorker->hasCompletionPhoto()) {
+            abort(422, 'The worker must upload a completion photo before payment can be recorded for this job.');
+        }
     }
 }
