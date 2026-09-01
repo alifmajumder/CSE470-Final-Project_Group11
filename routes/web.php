@@ -10,6 +10,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\ProfileController; 
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\CommunitySavingsController;
 
 Route::get('/', [TaskController::class, 'home'])->name('home');
 
@@ -142,3 +143,24 @@ Route::post('/profile', [ProfileController::class, 'update'])->middleware('auth'
 
 Route::post('/notifications/mark-read', [NotificationController::class, 'markAllRead'])
     ->middleware('auth')->name('notifications.read');
+
+
+// --------------------------------------------------------------------------
+// Feature: Community Savings Pool (Digital Somiti)
+// --------------------------------------------------------------------------
+Route::get('/savings', [CommunitySavingsController::class, 'index'])
+    ->middleware('auth')->name('savings.index');
+Route::post('/savings', [CommunitySavingsController::class, 'create'])
+    ->middleware('auth')->name('savings.create');
+Route::post('/savings/{pool}/members', [CommunitySavingsController::class, 'addMember'])
+    ->middleware('auth')->name('savings.members.add');
+Route::delete('/savings/{pool}/members/{member}', [CommunitySavingsController::class, 'removeMember'])
+    ->middleware('auth')->name('savings.members.remove');
+Route::post('/savings/{pool}/deposit', [CommunitySavingsController::class, 'deposit'])
+    ->middleware('auth')->name('savings.deposit');
+Route::post('/savings/{pool}/auto-deposit', [CommunitySavingsController::class, 'setAutoDeposit'])
+    ->middleware('auth')->name('savings.auto.set');
+Route::post('/savings/{pool}/auto-deposit/disable', [CommunitySavingsController::class, 'disableAutoDeposit'])
+    ->middleware('auth')->name('savings.auto.disable');
+Route::post('/savings/{pool}/withdraw', [CommunitySavingsController::class, 'withdraw'])
+    ->middleware('auth')->name('savings.withdraw');

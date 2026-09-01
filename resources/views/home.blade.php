@@ -110,7 +110,7 @@
                 <a href="/tasks/create" style="background: #2c3e50; color: white; padding: 6px 16px; border-radius: 20px; text-decoration: none; font-size: 14px; font-weight: 600; margin-right: 15px;">Post a Job</a>
                 <a href="/my-tasks" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">My Tasks</a>
                 <a href="/my-payments" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">My Payments</a>
-                <a href="/my-badges" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">My Badges</a>
+                <a href="/my-badges" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">My Badges</a>\n                <a href="/savings" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">Somiti</a>
                 <a href="/sms/dashboard" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">{{ __('messages.nav.sms_dashboard') }}</a>
                 
                 <!-- NOTIFICATION BELL WIDGET -->
