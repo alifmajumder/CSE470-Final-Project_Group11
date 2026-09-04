@@ -11,6 +11,7 @@ use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\ProfileController; 
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\CommunitySavingsController;
+use App\Http\Controllers\ForecastController;
 
 Route::get('/', [TaskController::class, 'home'])->name('home');
 
@@ -152,3 +153,8 @@ Route::post('/savings/{pool}/auto-deposit/disable', [CommunitySavingsController:
     ->middleware('auth')->name('savings.auto.disable');
 Route::post('/savings/{pool}/withdraw', [CommunitySavingsController::class, 'withdraw'])
     ->middleware('auth')->name('savings.withdraw');
+
+// --------------------------------------------------------------------------
+// Feature 15: Seasonal Labor Demand Forecast
+// --------------------------------------------------------------------------
+Route::get('/forecast', [ForecastController::class, 'index'])->name('forecast.index');

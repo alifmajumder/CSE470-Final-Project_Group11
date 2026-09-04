@@ -38,7 +38,6 @@ class PaymentController extends Controller
         $this->authorizeBelongsToTask($task, $taskWorker);
         $this->authorizeCompletionPhotoExists($taskWorker);
 
-
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01|max:9999999.99',
             'method' => 'required|in:cash,bkash,nagad',
@@ -97,7 +96,8 @@ class PaymentController extends Controller
     }
 
     /**
-     * A worker's full payment history -- their digital paper trail.
+     * FEATURE 14: Work History & Earnings Tracker
+     * Transforms the basic payments list into a full financial analytics dashboard.
      */
     public function myPayments()
     {
@@ -106,7 +106,41 @@ class PaymentController extends Controller
             ->latest('paid_at')
             ->get();
 
-        return view('payments.my_payments', compact('payments'));
+        // 1. Calculate Summary Statistics
+        $totalEarned = $payments->sum('amount');
+        
+        $earnedThisMonth = $payments->filter(function($payment) {
+            return $payment->paid_at >= Date::now()->startOfMonth();
+        })->sum('amount');
+
+        $earnedThisWeek = $payments->filter(function($payment) {
+            return $payment->paid_at >= Date::now()->startOfWeek();
+        })->sum('amount');
+
+        // 2. Calculate 6-Month Earnings Trend for the Chart
+        $trendLabels = [];
+        $trendData = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $monthStart = Date::now()->subMonths($i)->startOfMonth();
+            $monthEnd = Date::now()->subMonths($i)->endOfMonth();
+            
+            $monthSum = $payments->filter(function($payment) use ($monthStart, $monthEnd) {
+                return $payment->paid_at >= $monthStart && $payment->paid_at <= $monthEnd;
+            })->sum('amount');
+
+            $trendLabels[] = $monthStart->format('M Y');
+            $trendData[] = $monthSum;
+        }
+
+        return view('payments.my_payments', compact(
+            'payments', 
+            'totalEarned', 
+            'earnedThisMonth', 
+            'earnedThisWeek', 
+            'trendLabels', 
+            'trendData'
+        ));
     }
 
     private function authorizeOwner(Task $task): void

@@ -80,7 +80,6 @@
 </head>
 <body>
     <nav class="navbar">
-        <!-- LEFT: Brand Title, Welcome Message, and Admin Badge -->
         <div style="display: flex; align-items: center; gap: 20px;">
             <a href="/" class="navbar-brand">RuralConnect</a>
             
@@ -97,7 +96,6 @@
             @endauth
         </div>
 
-        <!-- RIGHT: Navigation Links -->
         <div class="nav-links">
             @guest
                 <a href="/login">{{ __('messages.nav.login') }}</a>
@@ -105,15 +103,17 @@
             @endguest
 
             @auth
-                <!-- The old admin panel link was deleted from here! -->
-
                 <a href="/tasks/create" style="background: #2c3e50; color: white; padding: 6px 16px; border-radius: 20px; text-decoration: none; font-size: 14px; font-weight: 600; margin-right: 15px;">Post a Job</a>
                 <a href="/my-tasks" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">My Tasks</a>
                 <a href="/my-payments" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">My Payments</a>
-                <a href="/my-badges" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">My Badges</a>\n                <a href="/savings" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">Somiti</a>
+                
+                <!-- FEATURE 15 LINK ADDED -->
+                <a href="/forecast" style="color: #d97706; font-weight: 700; text-decoration: none; margin-right: 15px;">Labor Forecast</a>
+                
+                <a href="/my-badges" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">My Badges</a>
+                <a href="/savings" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">Somiti</a>
                 <a href="/sms/dashboard" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">{{ __('messages.nav.sms_dashboard') }}</a>
                 
-                <!-- NOTIFICATION BELL WIDGET -->
                 <div class="notif-dropdown">
                     <span style="font-size: 20px; cursor: pointer;" onclick="markNotificationsAsRead()">🔔</span>
                     @php
@@ -145,7 +145,6 @@
                 </form>
             @endauth
 
-            {{-- Language switcher --}}
             @php $switchTo = app()->getLocale() === 'en' ? 'bn' : 'en'; @endphp
             <a href="{{ route('lang.switch', $switchTo) }}" class="lang-btn">
                 {{ __('messages.nav.switch_lang') }}
@@ -157,22 +156,18 @@
         <h1>{{ __('messages.home.tagline') }}</h1>
         <p>{{ __('messages.home.subtitle') }}</p>
         
-        <!-- WHY I DID IT: Integrated Sabaha's Feature 20 Impact Dashboard CTA directly below your homepage banner text. -->
         <div style="margin: 24px 0; text-align: center;">
             <a href="/impact" style="display: inline-block; background: #27ae60; color: white; text-decoration: none; padding: 14px 26px; border-radius: 999px; font-size: 16px; font-weight: 700;">View Impact Dashboard</a>
         </div>
     </div>
 
     <div class="main-container">
-        <!-- LEFT COLUMN: Filters & Calculator -->
         <div class="left-sidebar">
             
-            <!-- Professional Task Finder Sidebar (Only for Logged-In Users) -->
             @auth
                 <div class="filter-section">
                     <h3>🔍 Find Work</h3>
                     <form action="{{ route('home') }}" method="GET">
-                        
                         <div class="filter-form-group">
                             <label>Keyword Search</label>
                             <input type="text" name="keyword" placeholder="e.g. Tractor, Harvesting" value="{{ request('keyword') }}">
@@ -213,7 +208,15 @@
                 </div>
             @endguest
 
-            <!-- EXISTING: Interactive Fair Wage Calculator -->
+            <!-- FEATURE 15: Forecast Sidebar Teaser -->
+            <div class="filter-section" style="background: #fffaf0; border-left: 4px solid #d97706;">
+                <h3 style="color: #975a16; border-bottom-color: #fefcbf; margin-bottom: 10px;">🌦️ Labor Forecast</h3>
+                <p style="font-size: 13px; color: #744210; margin-bottom: 15px; line-height: 1.5;">
+                    Stay ahead of the season! Check the agricultural forecast to see which skills are in high demand right now.
+                </p>
+                <a href="/forecast" style="display: block; text-align: center; background: #d97706; color: white; padding: 8px; border-radius: 5px; font-weight: bold; text-decoration: none; font-size: 14px;">View Full Forecast</a>
+            </div>
+
             <div class="calculator-section">
                 <h3>⚖️ Fair Wage Calculator</h3>
                 <div class="calc-form-group">
@@ -232,11 +235,9 @@
                 </div>
             </div>
 
-        </div> <!-- End Left Column -->
+        </div> 
 
-        <!-- RIGHT COLUMN: Dynamic Job Cards -->
         <div class="right-content">
-            
             @auth
                 @if(session('success'))
                     <div class="alert-success" style="background: #f0fdf4; color: #166534; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bbf7d0; font-weight: bold;">
@@ -252,7 +253,6 @@
             @endauth
 
             <div class="job-grid">
-                
                 @guest
                     <div class="no-results" style="grid-column: 1 / -1; padding: 60px 20px; text-align: center; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
                         <h3 style="color: #27ae60; margin-top: 0; font-size: 24px;">Welcome to RuralConnect</h3>
@@ -276,7 +276,6 @@
                                 <span class="job-badge">{{ $task->categoryLabel() }}</span>
                             </div>
 
-                            <!-- Vacancy Counter with Red/Green Status -->
                             <div style="font-size: 13px; color: #4a5568; margin-bottom: 10px; font-weight: 600;">
                                 👥 Open Slots: 
                                 <span style="color: {{ $task->registered_workers >= $task->required_workers ? '#e53e3e' : '#27ae60' }};">
@@ -291,8 +290,6 @@
                             
                             <div class="job-footer">
                                 <span class="job-wage">৳{{ $task->wage }}</span>
-                                
-                                <!-- UPDATED "APPLY" BUTTON -->
                                 <form action="{{ route('tasks.workers.take', $task->id) }}" method="POST" style="margin: 0;">
                                     @csrf
                                     <button type="submit" class="apply-btn" style="border: none; cursor: pointer;">Apply for Job</button>
@@ -305,13 +302,10 @@
                         </div>
                     @endforelse
                 @endauth
-
             </div>
-        </div> <!-- End Right Column -->
+        </div>
+    </div>
 
-    </div> <!-- End Main Container -->
-
-    <!-- Javascript for the Calculator -->
     <script>
         function calculateFairWage() {
             let totalWage = parseFloat(document.getElementById('calc-total-wage').value);
@@ -330,7 +324,6 @@
         }
     </script>
 
-    <!-- Javascript for Notifications -->
     <script>
         function markNotificationsAsRead() {
             let badge = document.getElementById('notif-badge');
