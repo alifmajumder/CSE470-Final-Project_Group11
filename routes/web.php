@@ -24,19 +24,10 @@ Route::post('/logout', [AuthController::class, 'logout']);
 // --------------------------------------------------------------------------
 // Feature 2: SMS Alert & Missed Call System
 // --------------------------------------------------------------------------
-
-/*
- * Telephony provider webhook — no CSRF needed (external POST from IVR platform).
- * The MissedCallController validates an optional X-Webhook-Token header instead.
- */
 Route::post('/webhook/missed-call', [MissedCallController::class, 'handleWebhook'])
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
     ->name('webhook.missed-call');
 
-/*
- * Admin-only endpoint to broadcast job alerts for a specific task.
- * Protect with your auth middleware once authentication is wired up.
- */
 Route::post('/sms/send-alert', [SmsController::class, 'sendAlertViaHttp'])
     ->middleware(['auth'])
     ->name('sms.send-alert');
@@ -45,13 +36,11 @@ Route::get('/sms/dashboard', [SmsController::class, 'dashboard'])
     ->name('sms.dashboard');
 
 // --------------------------------------------------------------------------
-// Feature 20: Impact Dashboard (Sabaha's Feature)
+// Feature 20: Impact Dashboard
 // --------------------------------------------------------------------------
-// WHY I DID IT: Registered Sabaha's dashboard route so the "View Impact Dashboard" button successfully loads her analytics page.
 Route::get('/impact', [App\Http\Controllers\ImpactController::class, 'dashboard'])
     ->name('impact.dashboard');
 
-// Language switcher — stores chosen locale in session
 Route::get('/lang/{locale}', function (string $locale) {
     $supported = ['en', 'bn'];
     if (in_array($locale, $supported, true)) {
@@ -63,13 +52,11 @@ Route::get('/lang/{locale}', function (string $locale) {
 // --------------------------------------------------------------------------
 // Feature 19: Admin Dashboard & User Verification
 // --------------------------------------------------------------------------
-
 Route::get('/admin/users', [AdminController::class, 'index'])
     ->middleware('auth');
     
 Route::post('/admin/verify/{id}', [AdminController::class, 'verifyUser'])
     ->middleware('auth');
-
 
 // --------------------------------------------------------------------------
 // Feature 12: Group Task Creation
@@ -78,14 +65,13 @@ Route::get('/tasks/create', [TaskController::class, 'create'])->middleware('auth
 Route::post('/tasks', [TaskController::class, 'store'])->middleware('auth');
 Route::get('/my-tasks', [TaskController::class, 'myTasks'])->middleware('auth');
 
-
 // --------------------------------------------------------------------------
 // Feature 05: Fair Wage Calculation
 // --------------------------------------------------------------------------
 Route::get('/tasks/{id}', [TaskController::class, 'show'])->middleware('auth');
 
 // --------------------------------------------------------------------------
-// Feature: Worker Job Assignment
+// Feature: Worker Job Assignment & Feature 8: Digital Contract
 // --------------------------------------------------------------------------
 Route::post('/tasks/{task}/workers', [TaskWorkerController::class, 'store'])
     ->middleware('auth')->name('tasks.workers.store');
@@ -102,13 +88,17 @@ Route::post('/tasks/{task}/workers/{taskWorker}/reject', [TaskWorkerController::
 Route::post('/tasks/{task}/workers/{taskWorker}/rate', [TaskWorkerController::class, 'rateWorker'])
     ->middleware('auth')->name('tasks.workers.rate');
 
+// NEW CONTRACT ROUTES
+Route::post('/tasks/{task}/workers/{taskWorker}/contract-otp', [TaskWorkerController::class, 'generateContractOtp'])
+    ->middleware('auth')->name('tasks.workers.contract.otp');
+Route::post('/tasks/{task}/workers/{taskWorker}/contract-forward', [TaskWorkerController::class, 'forwardContractOtp'])
+    ->middleware('auth')->name('tasks.workers.contract.forward');
+Route::post('/tasks/{task}/workers/{taskWorker}/contract-confirm', [TaskWorkerController::class, 'confirmContract'])
+    ->middleware('auth')->name('tasks.workers.contract.confirm');
 
 // --------------------------------------------------------------------------
 // Feature: Work Completion Photo Upload
 // --------------------------------------------------------------------------
-// Worker uploads proof-of-work (e.g. a photo of the ploughed field) before
-// the employer is allowed to mark the job completed / release payment.
-
 Route::post('/tasks/{task}/workers/{taskWorker}/completion-photo', [TaskWorkerController::class, 'uploadCompletionPhoto'])
     ->middleware('auth')->name('tasks.workers.completion-photo');
 
@@ -134,7 +124,6 @@ Route::get('/my-badges', [BadgeController::class, 'myBadges'])
 Route::get('/workers/{user}/badges', [BadgeController::class, 'profile'])
     ->middleware('auth')->name('badges.profile');
 
-
 // --------------------------------------------------------------------------
 // User Profile & Trust Score Settings
 // --------------------------------------------------------------------------
@@ -143,7 +132,6 @@ Route::post('/profile', [ProfileController::class, 'update'])->middleware('auth'
 
 Route::post('/notifications/mark-read', [NotificationController::class, 'markAllRead'])
     ->middleware('auth')->name('notifications.read');
-
 
 // --------------------------------------------------------------------------
 // Feature: Community Savings Pool (Digital Somiti)

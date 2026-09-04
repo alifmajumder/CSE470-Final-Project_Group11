@@ -18,6 +18,8 @@ class TaskWorker extends Model
         'employer_review',
         'completion_photo_path',
         'completion_photo_uploaded_at',
+        'contract_otp',
+        'contract_confirmed_at',
     ];
 
     protected function casts(): array
@@ -26,6 +28,7 @@ class TaskWorker extends Model
             'joined_at' => 'datetime',
             'completed_at' => 'datetime',
             'completion_photo_uploaded_at' => 'datetime',
+            'contract_confirmed_at' => 'datetime',
         ];
     }
 
@@ -54,5 +57,10 @@ class TaskWorker extends Model
         return $this->hasCompletionPhoto()
             ? Storage::disk('public')->url($this->completion_photo_path)
             : null;
+    }
+
+    public function isContractSigned(): bool
+    {
+        return ! is_null($this->contract_confirmed_at);
     }
 }

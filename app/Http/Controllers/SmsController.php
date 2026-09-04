@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class SmsController extends Controller
 {
@@ -19,13 +20,25 @@ class SmsController extends Controller
 
     public function dashboard(): \Illuminate\View\View
     {
+        $missedCallsQuery = MissedCall::query();
+        $smsLogsQuery = SmsLog::query();
+
+        // If the user is NOT an admin, restrict the logs to their own phone number
+        if (Auth::user()->role !== 'admin') {
+            $userPhone = Auth::user()->phone;
+            $normalizedPhone = $userPhone ? $this->normalizePhone($userPhone) : '000';
+
+            $missedCallsQuery->whereIn('caller_number', [$userPhone, $normalizedPhone]);
+            $smsLogsQuery->whereIn('phone', [$userPhone, $normalizedPhone]);
+        }
+
         return view('sms.dashboard', [
-            'missedCalls'     => MissedCall::with('worker')->latest()->get(),
-            'smsLogs'         => SmsLog::latest()->get(),
-            'totalMissedCalls' => MissedCall::count(),
-            'totalSms'        => SmsLog::count(),
-            'smsSent'         => SmsLog::where('status', 'sent')->count(),
-            'smsFailed'       => SmsLog::where('status', 'failed')->count(),
+            'missedCalls'      => (clone $missedCallsQuery)->with('worker')->latest()->get(),
+            'smsLogs'          => (clone $smsLogsQuery)->latest()->get(),
+            'totalMissedCalls' => (clone $missedCallsQuery)->count(),
+            'totalSms'         => (clone $smsLogsQuery)->count(),
+            'smsSent'          => (clone $smsLogsQuery)->where('status', 'sent')->count(),
+            'smsFailed'        => (clone $smsLogsQuery)->where('status', 'failed')->count(),
         ]);
     }
 
@@ -45,10 +58,10 @@ class SmsController extends Controller
         $message    = $this->formatJobMessage($jobDetails);
 
         $smsLog = SmsLog::create([
-            'phone'        => $normalized,
-            'message'      => $message,
-            'status'       => 'pending',
-            'gateway_used' => config('services.sms.driver', 'ssl'),
+            'phone'         => $normalized,
+            'message'       => $message,
+            'status'        => 'pending',
+            'gateway_used'  => config('services.sms.driver', 'ssl'),
             'attempt_count' => 0,
         ]);
 

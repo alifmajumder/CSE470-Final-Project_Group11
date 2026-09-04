@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Task;
 use App\Models\TaskWorker;
 use App\Models\User;
+use App\Models\SmsLog;
 use App\Services\BadgeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,11 +16,6 @@ use Illuminate\Support\Facades\Storage;
 
 class TaskWorkerController extends Controller
 {
-    /**
-     * Employer signs a worker up for their task, by phone or email.
-     * This is what lets us later record a payment for -- and credit a
-     * completed job to -- a specific worker.
-     */
     public function store(Request $request, Task $task)
     {
         $this->authorizeOwner($task);
@@ -70,9 +66,6 @@ class TaskWorkerController extends Controller
         return back()->with('success', "{$worker->name} added to the task.");
     }
 
-    /**
-     * Worker applies for an open task, putting them in the 'pending' pool.
-     */
     public function take(Task $task)
     {
         $worker = Auth::user();
@@ -105,9 +98,6 @@ class TaskWorkerController extends Controller
         return back()->with('success', 'You have successfully applied! Please wait for employer approval.');
     }
 
-    /**
-     * Employer reviews a pending worker and approves them for the job.
-     */
     public function approve(Task $task, TaskWorker $taskWorker)
     {
         $this->authorizeOwner($task);
@@ -147,9 +137,6 @@ class TaskWorkerController extends Controller
         return back()->with('success', "Worker {$taskWorker->worker->name} approved!");
     }
 
-    /**
-     * Employer rejects a pending worker application.
-     */
     public function reject(Task $task, TaskWorker $taskWorker)
     {
         $this->authorizeOwner($task);
@@ -169,6 +156,93 @@ class TaskWorkerController extends Controller
         return back()->with('success', "Worker application rejected.");
     }
 
+    // FEATURE 8: Generate Contract OTP & Dispatch Simulated SMS
+    public function generateContractOtp(Task $task, TaskWorker $taskWorker)
+    {
+        $this->authorizeOwner($task);
+        $this->authorizeBelongsToTask($task, $taskWorker);
+
+        if ($taskWorker->status !== 'assigned') {
+            return back()->withErrors(['contract' => 'Worker must be officially assigned before creating a contract.']);
+        }
+
+        $otp = (string) rand(100000, 999999);
+        $taskWorker->update(['contract_otp' => $otp]);
+
+        // 1. Log SMS intended for the Worker (Containing the code)
+        $workerPhone = $taskWorker->worker->phone ?? '+8801000000001';
+        SmsLog::create([
+            'phone' => $workerPhone,
+            'message' => "Digital Contract OTP: {$otp}. Send this 6-digit code to the employer to lock in your wage (৳{$task->wage}) for '{$task->title}'.",
+            'status' => 'sent',
+            'gateway_used' => 'log',
+            'attempt_count' => 1,
+            'sent_at' => Date::now(),
+        ]);
+
+        // 2. Log SMS intended for the Employer (Notification only)
+        $employerPhone = $task->employer->phone ?? '+8801000000002';
+        SmsLog::create([
+            'phone' => $employerPhone,
+            'message' => "System: An OTP has been securely sent to your worker {$taskWorker->worker->name}. Check your SMS Dashboard when they forward it back to you.",
+            'status' => 'sent',
+            'gateway_used' => 'log',
+            'attempt_count' => 1,
+            'sent_at' => Date::now(),
+        ]);
+
+        return back()->with('success', 'Contract OTP generated! An SMS has been sent to the worker. Check the SMS Dashboard.');
+    }
+
+    // FEATURE 8: Worker Forwards OTP to Employer via SMS
+    public function forwardContractOtp(Request $request, Task $task, TaskWorker $taskWorker)
+    {
+        abort_if($taskWorker->worker_id !== Auth::id(), 403, 'Only the worker can forward their OTP.');
+        $this->authorizeBelongsToTask($task, $taskWorker);
+
+        if (!$taskWorker->contract_otp) {
+            return back()->withErrors(['otp' => 'There is no OTP available to forward.']);
+        }
+
+        $employerPhone = $task->employer->phone ?? '+8801000000002';
+
+        SmsLog::create([
+            'phone' => $employerPhone,
+            'message' => "From Worker {$taskWorker->worker->name}: The OTP to lock our contract for '{$task->title}' is {$taskWorker->contract_otp}.",
+            'status' => 'sent',
+            'gateway_used' => 'log',
+            'attempt_count' => 1,
+            'sent_at' => Date::now(),
+        ]);
+
+        return back()->with('success', 'OTP successfully forwarded to the employer via SMS!');
+    }
+
+    // FEATURE 8: Confirm Contract
+    public function confirmContract(Request $request, Task $task, TaskWorker $taskWorker)
+    {
+        $this->authorizeOwner($task);
+        $this->authorizeBelongsToTask($task, $taskWorker);
+
+        $request->validate(['otp' => 'required|string']);
+
+        if ($taskWorker->contract_otp !== $request->otp) {
+            return back()->withErrors(['otp' => 'Invalid OTP. Please check the SMS Dashboard for the code sent by the worker.']);
+        }
+
+        $taskWorker->update([
+            'contract_confirmed_at' => Date::now(),
+            'contract_otp' => null, 
+        ]);
+
+        Notification::create([
+            'user_id' => $taskWorker->worker_id,
+            'message' => "📝 Digital Contract Signed! The agreement and wage for '{$task->title}' is officially locked."
+        ]);
+
+        return back()->with('success', 'Digital Contract successfully signed! Neither party can change the terms now.');
+    }
+
     public function uploadCompletionPhoto(Request $request, Task $task, TaskWorker $taskWorker)
     {
         $this->authorizeBelongsToTask($task, $taskWorker);
@@ -183,7 +257,6 @@ class TaskWorkerController extends Controller
             'completion_photo' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
-        // Replace any previous photo for this job rather than piling up files.
         if ($taskWorker->completion_photo_path) {
             Storage::disk('public')->delete($taskWorker->completion_photo_path);
         }
@@ -203,10 +276,6 @@ class TaskWorkerController extends Controller
         return back()->with('success', 'Completion photo uploaded. The employer will review it before marking the job complete.');
     }
 
-    /**
-     * Employer marks a worker's job as completed. This is what feeds the
-     * Skill Badge System -- completed jobs are what count toward a badge.
-     */
     public function complete(Task $task, TaskWorker $taskWorker, BadgeService $badgeService)
     {
         $this->authorizeOwner($task);
@@ -231,11 +300,6 @@ class TaskWorkerController extends Controller
         return back()->with('success', $message);
     }
 
-    /**
-     * Employer removes a worker who was signed up by mistake. Only allowed
-     * before the job is marked completed or any payment has been recorded,
-     * so it can't be used to quietly erase a real work/payment history.
-     */
     public function cancel(Task $task, TaskWorker $taskWorker)
     {
         $this->authorizeOwner($task);
@@ -256,14 +320,6 @@ class TaskWorkerController extends Controller
         return back()->with('success', 'Worker removed from task.');
     }
 
-    /**
-     * Employer submits a 1 to 5 star rating and review for a completed worker.
-     * This powers Feature 11 (Worker Rating & Trust Score).
-     */
-    /**
-     * Employer submits a 1 to 5 star rating and review for a completed worker.
-     * This powers Feature 11 (Worker Rating & Trust Score).
-     */
     public function rateWorker(Request $request, Task $task, TaskWorker $taskWorker)
     {
         $this->authorizeOwner($task);
@@ -284,7 +340,6 @@ class TaskWorkerController extends Controller
 
         $taskWorker->update([
             'employer_rating' => $validated['rating'],
-            // THE FIX: Add "?? null" so PHP doesn't crash if the text review is missing!
             'employer_review' => $validated['review'] ?? null, 
         ]);
 

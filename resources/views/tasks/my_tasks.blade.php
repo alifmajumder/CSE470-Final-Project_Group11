@@ -42,13 +42,12 @@
         table.workers-table th { color: #a0aec0; font-size: 11px; text-transform: uppercase; }
         .worker-status { padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
         
-        /* NEW STATUS COLORS */
         .worker-status.assigned { background: #fefcbf; color: #975a16; }
         .worker-status.completed { background: #c6f6d5; color: #276749; }
         .worker-status.pending { background: #e2e8f0; color: #4a5568; }
         .worker-status.rejected { background: #fed7d7; color: #c53030; }
 
-        .actions-cell { display: flex; gap: 6px; flex-wrap: wrap; }
+        .actions-cell { display: flex; gap: 6px; flex-wrap: wrap; flex-direction: column; }
         .no-workers { color: #a0aec0; font-size: 14px; font-style: italic; padding: 10px 0; }
         .payment-line { font-size: 13px; margin-bottom: 3px; }
         .payment-line a { color: #3182ce; text-decoration: none; }
@@ -56,7 +55,6 @@
         .confirmed-tag { color: #276749; font-weight: 600; }
         .unconfirmed-tag { color: #a0aec0; }
 
-        /* FEATURE: Work Completion Photo Upload */
         .proof-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e0; display: block; margin-bottom: 4px; }
         .proof-missing { font-size: 12px; color: #a0aec0; font-style: italic; }
         .proof-pending-note { font-size: 12px; color: #b7791f; font-weight: 600; margin-top: 4px; }
@@ -102,7 +100,6 @@
                     <span class="progress-text">{{ $task->registered_workers }} / {{ $task->required_workers }}</span> workers signed up
                 </div>
 
-                {{-- Add a worker by phone or email --}}
                 <form action="{{ route('tasks.workers.store', $task) }}" method="POST" class="add-worker-form">
                     @csrf
                     <input type="text" name="worker_identifier" placeholder="Worker's phone or email" required>
@@ -129,8 +126,6 @@
                                 <tr>
                                     <td>
                                         <strong>{{ $tw->worker->name }}</strong><br>
-                                        
-                                        <!-- NEW: Displaying the Worker's Trust Score -->
                                         @php $workerScore = $tw->worker->averageTrustScore(); @endphp
                                         @if($workerScore > 0)
                                             <span style="font-size: 12px; color: #d97706; font-weight: bold; display: inline-block; margin: 2px 0;">
@@ -141,13 +136,11 @@
                                                 No ratings yet
                                             </span><br>
                                         @endif
-
                                         <a href="{{ route('badges.profile', $tw->worker) }}" style="font-size:12px; color:#3182ce; text-decoration:none;">View badges &rarr;</a>
                                     </td>
                                     <td>{{ $tw->worker->phone ?? 'N/A' }}</td>
                                     <td><span class="worker-status {{ $tw->status }}">{{ $tw->status }}</span></td>
                                     <td>
-                                        {{-- FEATURE: Work Completion Photo Upload --}}
                                         @if($tw->hasCompletionPhoto())
                                             <a href="{{ $tw->completionPhotoUrl() }}" target="_blank" rel="noopener">
                                                 <img src="{{ $tw->completionPhotoUrl() }}" alt="Completion proof" class="proof-thumb">
@@ -177,30 +170,54 @@
                                     <td>
                                         <div class="actions-cell">
                                             @if($tw->status === 'pending')
-                                                <form action="{{ route('tasks.workers.approve', [$task, $tw]) }}" method="POST" style="margin: 0;">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-success btn-sm">Approve</button>
-                                                </form>
-                                                <form action="{{ route('tasks.workers.reject', [$task, $tw]) }}" method="POST" style="margin: 0;">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-danger btn-sm">Reject</button>
-                                                </form>
-                                            @elseif($tw->status === 'assigned')
-                                                {{-- FEATURE: Work Completion Photo Upload --}}
-                                                {{-- Mark Completed / Record Payment are locked until the worker uploads proof. --}}
-                                                @if($tw->hasCompletionPhoto())
-                                                    <form action="{{ route('tasks.workers.complete', [$task, $tw]) }}" method="POST" style="margin: 0;">
+                                                <div style="display:flex; gap:6px;">
+                                                    <form action="{{ route('tasks.workers.approve', [$task, $tw]) }}" method="POST" style="margin: 0;">
                                                         @csrf
-                                                        <button type="submit" class="btn btn-success btn-sm">Mark Completed</button>
+                                                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
                                                     </form>
-
-                                                    <a href="{{ route('payments.create', [$task, $tw]) }}" class="btn btn-outline btn-sm">Record Payment</a>
+                                                    <form action="{{ route('tasks.workers.reject', [$task, $tw]) }}" method="POST" style="margin: 0;">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                                    </form>
+                                                </div>
+                                            @elseif($tw->status === 'assigned')
+                                                
+                                                <!-- FEATURE 8: DIGITAL CONTRACT UI -->
+                                                @if(!$tw->contract_confirmed_at)
+                                                    <div style="background: #fffaf0; border: 1px solid #ecc94b; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+                                                        <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #975a16;">📝 Digital Contract Not Signed</p>
+                                                        @if(!$tw->contract_otp)
+                                                            <form action="{{ route('tasks.workers.contract.otp', [$task, $tw]) }}" method="POST" style="margin: 0;">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-outline btn-sm">Generate OTP</button>
+                                                            </form>
+                                                        @else
+                                                            <form action="{{ route('tasks.workers.contract.confirm', [$task, $tw]) }}" method="POST" style="display: flex; gap: 5px;">
+                                                                @csrf
+                                                                <input type="text" name="otp" placeholder="Worker's 6-digit OTP" required style="padding: 4px; width: 140px; font-size: 12px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                                                                <button type="submit" class="btn btn-success btn-sm">Sign</button>
+                                                            </form>
+                                                            <div style="font-size: 11px; color: #718096; margin-top: 4px;">Code sent to worker. Check SMS Dashboard when they forward it.</div>
+                                                        @endif
+                                                    </div>
                                                 @else
-                                                    <span class="proof-pending-note">⏳ Waiting for completion photo</span>
+                                                    <span style="display: inline-block; background: #c6f6d5; color: #22543d; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-bottom: 10px;">📝 Contract Locked</span>
                                                 @endif
 
+                                                <div style="display:flex; gap:6px;">
+                                                    @if($tw->hasCompletionPhoto())
+                                                        <form action="{{ route('tasks.workers.complete', [$task, $tw]) }}" method="POST" style="margin: 0;">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-success btn-sm">Mark Completed</button>
+                                                        </form>
+                                                        <a href="{{ route('payments.create', [$task, $tw]) }}" class="btn btn-outline btn-sm">Record Payment</a>
+                                                    @else
+                                                        <span class="proof-pending-note">⏳ Waiting for completion photo</span>
+                                                    @endif
+                                                </div>
+
                                                 @if($workerPayments->isEmpty())
-                                                    <form action="{{ route('tasks.workers.cancel', [$task, $tw]) }}" method="POST" onsubmit="return confirm('Remove this worker from the task?');" style="margin: 0;">
+                                                    <form action="{{ route('tasks.workers.cancel', [$task, $tw]) }}" method="POST" onsubmit="return confirm('Remove this worker from the task?');" style="margin-top: 6px;">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-danger btn-sm">Remove</button>
@@ -208,7 +225,6 @@
                                                 @endif
                                             @endif
 
-                                            <!-- FEATURE 11: Trust Score Rating UI -->
                                             @if($tw->status === 'completed' && !$tw->employer_rating)
                                                 <form action="{{ route('tasks.workers.rate', [$task, $tw]) }}" method="POST" style="display:flex; gap:5px; align-items:center; margin-top: 5px;">
                                                     @csrf
@@ -252,6 +268,23 @@
                     </div>
                     <span class="worker-status {{ $tw->status }}">{{ $tw->status }}</span>
                 </div>
+                
+                <!-- FEATURE 8: WORKER DASHBOARD CONTRACT STATUS -->
+                @if($tw->contract_confirmed_at)
+                    <div style="margin-bottom: 10px;">
+                        <span style="display: inline-block; background: #c6f6d5; color: #22543d; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">📝 Digital Contract Signed & Locked</span>
+                    </div>
+                @elseif($tw->contract_otp)
+                    <div style="background: #ebf8ff; border: 1px solid #90cdf4; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+                        <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #2b6cb0;">🔐 Employer Requested Contract</p>
+                        <p style="font-size: 12px; color: #2c5282; margin: 0 0 10px 0;">An OTP was sent to you. Forward it to the employer via SMS so they can lock your wage.</p>
+                        <form action="{{ route('tasks.workers.contract.forward', [$tw->task, $tw]) }}" method="POST" style="margin: 0;">
+                            @csrf
+                            <button type="submit" class="btn btn-primary btn-sm">Forward OTP via SMS</button>
+                        </form>
+                    </div>
+                @endif
+
                 <div class="task-meta">
                     📍 {{ $tw->task->location }}, {{ $tw->task->district }} &middot; 
                     💰 Wage: ৳{{ $tw->task->wage }} &middot; 
@@ -259,16 +292,13 @@
                 </div>
                 <p style="margin: 0; color: #4a5568; font-size: 14px;">{{ $tw->task->description }}</p>
 
-                {{-- FEATURE: Work Completion Photo Upload --}}
                 @if($tw->status === 'assigned')
                     <div class="completion-photo-form">
                         <span class="completion-photo-label">📸 Upload a photo of the finished work as proof for the employer:</span>
-
                         @if($tw->hasCompletionPhoto())
                             <img src="{{ $tw->completionPhotoUrl() }}" alt="Your completion photo" class="completion-photo-preview">
                             <span class="completion-photo-uploaded-tag">Uploaded &mdash; you can replace it below until the employer marks the job completed.</span>
                         @endif
-
                         <form action="{{ route('tasks.workers.completion-photo', [$tw->task, $tw]) }}" method="POST" enctype="multipart/form-data" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                             @csrf
                             <input type="file" name="completion_photo" accept="image/png, image/jpeg, image/webp" required>
@@ -282,7 +312,6 @@
                     </div>
                 @endif
                 
-                <!-- FEATURE 11: Worker sees the rating they received! -->
                 @if($tw->employer_rating)
                     <div style="margin-top: 15px; padding-top: 12px; border-top: 1px dashed #cbd5e0; font-size: 14px;">
                         <strong style="color: #d97706;">Employer Rating:</strong> 
