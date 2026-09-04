@@ -9,11 +9,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE task_workers MODIFY COLUMN status ENUM('assigned', 'completed', 'cancelled', 'pending', 'rejected') NOT NULL DEFAULT 'pending'");
+        Schema::table('task_workers', function (Blueprint $table) {
+            $table->string('status')->default('pending')->change();
+        });
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE task_workers MODIFY COLUMN status ENUM('assigned', 'completed', 'cancelled') NOT NULL DEFAULT 'assigned'");
+        Schema::table('task_workers', function (Blueprint $table) {
+            $table->string('status')->default('assigned')->change();
+        });
     }
 };
