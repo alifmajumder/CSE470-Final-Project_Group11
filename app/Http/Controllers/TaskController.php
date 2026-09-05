@@ -11,9 +11,23 @@ class TaskController extends Controller
 {
     public function home(Request $request)
     {
+        // NEW FEATURE: Fetch top workers based on completed tasks and average ratings
+        $topWorkers = \App\Models\User::where('role', '!=', 'admin')
+            ->withCount(['taskAssignments as completed_tasks_count' => function ($query) {
+                $query->where('status', 'completed');
+            }])
+            ->withAvg('taskAssignments as average_rating', 'employer_rating')
+            ->orderByDesc('completed_tasks_count')
+            ->orderByDesc('average_rating')
+            ->take(5)
+            ->get()
+            ->filter(function($worker) {
+                return $worker->completed_tasks_count > 0; // Only show workers who have actually completed jobs
+            });
+
         if (!Auth::check()) {
             $tasks = collect();
-            return view('home', compact('tasks'));
+            return view('home', compact('tasks', 'topWorkers'));
         }
 
         $query = Task::query();
@@ -43,7 +57,7 @@ class TaskController extends Controller
 
         $tasks = $query->latest()->get();
 
-        return view('home', compact('tasks'));
+        return view('home', compact('tasks', 'topWorkers'));
     }
 
     public function create()

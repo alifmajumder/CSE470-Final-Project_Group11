@@ -31,7 +31,9 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['pool_id', 'user_id']);
-            $table->index(['next_auto_deposit_at', 'auto_deposit_frequency']);
+            
+            // FIX: Explicitly set a short custom index name
+            $table->index(['next_auto_deposit_at', 'auto_deposit_frequency'], 'cs_members_deposit_idx');
         });
 
         Schema::create('community_savings_transactions', function (Blueprint $table) {

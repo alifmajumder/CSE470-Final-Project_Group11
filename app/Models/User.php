@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Barter; // Injected Feature
 
 class User extends Authenticatable
 {
@@ -88,6 +89,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserBadge::class);
     }
+    
     /** Calculate the average 5-star trust score for this worker. */
     public function averageTrustScore(): float
     {
@@ -95,8 +97,15 @@ class User extends Authenticatable
             ->whereNotNull('employer_rating')
             ->avg('employer_rating');
     }
+    
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class)->latest();
+    }
+
+    /** Barter trades this user has posted. */
+    public function barters(): HasMany
+    {
+        return $this->hasMany(Barter::class);
     }
 }

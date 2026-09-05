@@ -12,7 +12,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\CommunitySavingsController;
 use App\Http\Controllers\ForecastController;
-use App\Http\Controllers\SchemeController; // Injected Controller
+use App\Http\Controllers\SchemeController;
+use App\Http\Controllers\MarketPriceController;
+use App\Http\Controllers\BarterController; // Injected Controller
 
 Route::get('/', [TaskController::class, 'home'])->name('home');
 
@@ -50,6 +52,10 @@ Route::get('/admin/users', [AdminController::class, 'index'])
     
 Route::post('/admin/verify/{id}', [AdminController::class, 'verifyUser'])
     ->middleware('auth');
+
+// FEATURE 13: Krishi Market Admin Routes
+Route::post('/admin/market', [MarketPriceController::class, 'store'])->middleware('auth')->name('market.store');
+Route::delete('/admin/market/{id}', [MarketPriceController::class, 'destroy'])->middleware('auth')->name('market.destroy');
 
 Route::get('/tasks/create', [TaskController::class, 'create'])->middleware('auth');
 Route::post('/tasks', [TaskController::class, 'store'])->middleware('auth');
@@ -126,3 +132,8 @@ Route::get('/forecast', [ForecastController::class, 'index'])->name('forecast.in
 // FEATURE 17: Government Scheme Checker
 Route::get('/schemes', [SchemeController::class, 'index'])->name('schemes.index');
 Route::post('/schemes/check', [SchemeController::class, 'check'])->name('schemes.check');
+
+// NEW FEATURE 14: Bini-Moy Barter Routes
+Route::get('/barter', [BarterController::class, 'index'])->name('barter.index');
+Route::post('/barter', [BarterController::class, 'store'])->middleware('auth')->name('barter.store');
+Route::delete('/barter/{id}', [BarterController::class, 'destroy'])->middleware('auth')->name('barter.destroy');

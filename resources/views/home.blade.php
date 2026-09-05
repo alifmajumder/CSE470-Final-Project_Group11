@@ -69,6 +69,19 @@
         .calc-btn:hover { background: #1a252f; }
         .calc-result { margin-top: 15px; text-align: center; display: none; padding: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; font-size: 14px; }
         .calc-result span { font-size: 24px; font-weight: bold; color: #166534; display: block; margin-top: 5px; }
+
+        .market-board { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .market-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e0; padding: 10px 0; font-size: 14px; }
+        .market-item:last-child { border-bottom: none; }
+
+        .leaderboard-board { background: #fffaf0; border: 1px solid #fef08a; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .leaderboard-item { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding: 10px 0; }
+        .leaderboard-item:last-child { border-bottom: none; }
+        .rank-badge { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: white; }
+        .rank-1 { background: #ecc94b; color: #744210; } 
+        .rank-2 { background: #e2e8f0; color: #4a5568; } 
+        .rank-3 { background: #f6ad55; color: #7b341e; } 
+        .rank-other { background: #edf2f7; color: #718096; }
     </style>
 </head>
 <body>
@@ -101,8 +114,6 @@
                 <a href="/my-payments" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">My Payments</a>
                 
                 <a href="/forecast" style="color: #d97706; font-weight: 700; text-decoration: none; margin-right: 15px;">Labor Forecast</a>
-                
-                <!-- FEATURE 17 LINK ADDED -->
                 <a href="/schemes" style="color: #3182ce; font-weight: 700; text-decoration: none; margin-right: 15px;">Govt Schemes</a>
 
                 <a href="/my-badges" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">My Badges</a>
@@ -159,6 +170,55 @@
     <div class="main-container">
         <div class="left-sidebar">
             
+            <div class="market-board">
+                <h3 style="color: #166534; margin: 0 0 15px 0; border-bottom: 2px solid #bbf7d0; padding-bottom: 10px; font-size: 20px;">🌾 Krishi Market Rates</h3>
+                @php 
+                    $livePrices = \App\Models\MarketPrice::latest()->take(6)->get(); 
+                @endphp
+                @forelse($livePrices as $price)
+                    <div class="market-item">
+                        <span style="font-weight: 600; color: #2c3e50;">{{ $price->item_name }} <span style="font-weight: normal; color: #718096; font-size: 12px;">({{ $price->unit }})</span></span>
+                        <span style="font-weight: bold; color: #27ae60;">৳{{ number_format($price->price, 2) }}</span>
+                    </div>
+                @empty
+                    <div style="font-size: 13px; color: #718096; font-style: italic; text-align: center;">Market prices are currently unavailable.</div>
+                @endforelse
+                <div style="font-size: 11px; color: #a0aec0; text-align: center; margin-top: 15px;">Admin Regulated Noticeboard</div>
+            </div>
+
+            <div class="leaderboard-board" style="border-left: 4px solid #ecc94b;">
+                <h3 style="color: #975a16; margin: 0 0 15px 0; border-bottom: 2px solid #fef08a; padding-bottom: 10px; font-size: 20px;">🏆 Shera Sromik</h3>
+                <p style="font-size: 12px; color: #744210; margin-top: -10px; margin-bottom: 15px;">Top workers by completed jobs & ratings</p>
+                
+                @forelse($topWorkers ?? [] as $index => $worker)
+                    <div class="leaderboard-item">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="rank-badge {{ $index == 0 ? 'rank-1' : ($index == 1 ? 'rank-2' : ($index == 2 ? 'rank-3' : 'rank-other')) }}">
+                                {{ $index + 1 }}
+                            </div>
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="font-weight: 600; color: #2c3e50; font-size: 14px;">{{ $worker->name }}</span>
+                                <span style="font-size: 12px; color: #718096;">{{ $worker->completed_tasks_count }} jobs done</span>
+                            </div>
+                        </div>
+                        <div style="font-weight: bold; color: #d97706; font-size: 14px;">
+                            ⭐ {{ number_format($worker->average_rating ?? 5.0, 1) }}
+                        </div>
+                    </div>
+                @empty
+                    <div style="font-size: 13px; color: #718096; font-style: italic; text-align: center;">No workers have completed jobs yet.</div>
+                @endforelse
+            </div>
+
+            <!-- FEATURE 14: Bini-Moy Sidebar Teaser -->
+            <div class="filter-section" style="background: #faf5ff; border-left: 4px solid #805ad5;">
+                <h3 style="color: #553c9a; border-bottom-color: #e9d8fd; margin-bottom: 10px;">🔄 Bini-Moy</h3>
+                <p style="font-size: 13px; color: #44337a; margin-bottom: 15px; line-height: 1.5;">
+                    Short on cash? Trade your seeds, tools, or labor directly with other locals on the Bini-Moy exchange board.
+                </p>
+                <a href="/barter" style="display: block; text-align: center; background: #805ad5; color: white; padding: 8px; border-radius: 5px; font-weight: bold; text-decoration: none; font-size: 14px;">View Barter Board</a>
+            </div>
+
             @auth
                 <div class="filter-section">
                     <h3>🔍 Find Work</h3>
@@ -203,7 +263,6 @@
                 </div>
             @endguest
 
-            <!-- FEATURE 17: Schemes Sidebar Teaser -->
             <div class="filter-section" style="background: #ebf8ff; border-left: 4px solid #3182ce;">
                 <h3 style="color: #2b6cb0; border-bottom-color: #bee3f8; margin-bottom: 10px;">🏛️ Govt Subsidies</h3>
                 <p style="font-size: 13px; color: #2c5282; margin-bottom: 15px; line-height: 1.5;">
