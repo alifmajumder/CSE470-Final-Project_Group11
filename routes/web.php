@@ -12,6 +12,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\CommunitySavingsController;
 use App\Http\Controllers\ForecastController;
+use App\Http\Controllers\SchemeController; // Injected Controller
 
 Route::get('/', [TaskController::class, 'home'])->name('home');
 
@@ -121,3 +122,7 @@ Route::post('/savings/{pool}/withdraw', [CommunitySavingsController::class, 'wit
     ->middleware('auth')->name('savings.withdraw');
 
 Route::get('/forecast', [ForecastController::class, 'index'])->name('forecast.index');
+
+// FEATURE 17: Government Scheme Checker
+Route::get('/schemes', [SchemeController::class, 'index'])->name('schemes.index');
+Route::post('/schemes/check', [SchemeController::class, 'check'])->name('schemes.check');

@@ -18,7 +18,6 @@
         .lang-btn { background: #27ae60; color: white; border: none; border-radius: 20px; padding: 6px 16px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; font-family: 'Hind Siliguri', sans-serif; transition: background 0.2s; }
         .lang-btn:hover { background: #219150; }
 
-        /* Notification Bell Styles */
         .notif-dropdown { position: relative; display: inline-block; margin-right: 15px; }
         .notif-content { display: none; position: absolute; right: 0; top: 30px; background-color: white; min-width: 280px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); border-radius: 8px; border: 1px solid #e2e8f0; z-index: 100; max-height: 350px; overflow-y: auto; }
         .notif-dropdown:hover .notif-content { display: block; }
@@ -26,20 +25,16 @@
         .notif-item:last-child { border-bottom: none; }
         .notif-badge { position: absolute; top: -5px; right: -8px; background: #e53e3e; color: white; border-radius: 50%; padding: 2px 6px; font-size: 11px; font-weight: bold; }
 
-        /* Two-Column Main Layout */
         .header-text { text-align: center; padding: 40px 20px 20px; }
         .header-text h1 { font-size: 48px; margin-bottom: 10px; color: #27ae60; margin-top: 0; }
         .header-text p { font-size: 20px; color: #4a5568; max-width: 600px; margin: 0 auto; }
         
         .main-container { display: flex; max-width: 1200px; margin: 0 auto; padding: 20px; gap: 30px; align-items: flex-start; }
         
-        /* Left Column: Filters & Calculator */
         .left-sidebar { width: 350px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; }
         
-        /* Right Column: Job Cards */
         .right-content { flex-grow: 1; }
 
-        /* Filter Sidebar Styles */
         .filter-section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .filter-section h3 { margin-top: 0; color: #27ae60; font-size: 20px; margin-bottom: 20px; border-bottom: 2px solid #f0fdf4; padding-bottom: 10px; }
         .filter-form-group { margin-bottom: 15px; display: flex; flex-direction: column; text-align: left; }
@@ -51,7 +46,6 @@
         .clear-btn { background: #e2e8f0; color: #4a5568; border: none; padding: 10px; font-weight: bold; border-radius: 5px; cursor: pointer; width: 100%; font-size: 14px; transition: background 0.3s; margin-top: 10px; text-decoration: none; display: block; text-align: center; box-sizing: border-box; }
         .clear-btn:hover { background: #cbd5e0; }
 
-        /* Job Card Styles */
         .job-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
         .job-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 5px solid #27ae60; transition: transform 0.2s; display: flex; flex-direction: column; }
         .job-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -65,7 +59,6 @@
         .apply-btn:hover { background: #1a252f; }
         .no-results { grid-column: 1 / -1; background: white; padding: 40px; text-align: center; border-radius: 10px; color: #718096; font-size: 18px; }
 
-        /* Calculator Styles */
         .calculator-section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .calculator-section h3 { margin-top: 0; color: #27ae60; font-size: 20px; margin-bottom: 20px; border-bottom: 2px solid #f0fdf4; padding-bottom: 10px; }
         .calc-form-group { margin-bottom: 15px; display: flex; flex-direction: column; text-align: left; }
@@ -107,9 +100,11 @@
                 <a href="/my-tasks" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">My Tasks</a>
                 <a href="/my-payments" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">My Payments</a>
                 
-                <!-- FEATURE 15 LINK ADDED -->
                 <a href="/forecast" style="color: #d97706; font-weight: 700; text-decoration: none; margin-right: 15px;">Labor Forecast</a>
                 
+                <!-- FEATURE 17 LINK ADDED -->
+                <a href="/schemes" style="color: #3182ce; font-weight: 700; text-decoration: none; margin-right: 15px;">Govt Schemes</a>
+
                 <a href="/my-badges" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">My Badges</a>
                 <a href="/savings" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">Somiti</a>
                 <a href="/sms/dashboard" style="color: #4a5568; font-weight: 600; text-decoration: none; margin-right: 15px;">{{ __('messages.nav.sms_dashboard') }}</a>
@@ -208,7 +203,15 @@
                 </div>
             @endguest
 
-            <!-- FEATURE 15: Forecast Sidebar Teaser -->
+            <!-- FEATURE 17: Schemes Sidebar Teaser -->
+            <div class="filter-section" style="background: #ebf8ff; border-left: 4px solid #3182ce;">
+                <h3 style="color: #2b6cb0; border-bottom-color: #bee3f8; margin-bottom: 10px;">🏛️ Govt Subsidies</h3>
+                <p style="font-size: 13px; color: #2c5282; margin-bottom: 15px; line-height: 1.5;">
+                    Are you eligible for state support? Enter your land size and income to check for matching government programs.
+                </p>
+                <a href="/schemes" style="display: block; text-align: center; background: #3182ce; color: white; padding: 8px; border-radius: 5px; font-weight: bold; text-decoration: none; font-size: 14px;">Check Eligibility</a>
+            </div>
+
             <div class="filter-section" style="background: #fffaf0; border-left: 4px solid #d97706;">
                 <h3 style="color: #975a16; border-bottom-color: #fefcbf; margin-bottom: 10px;">🌦️ Labor Forecast</h3>
                 <p style="font-size: 13px; color: #744210; margin-bottom: 15px; line-height: 1.5;">
