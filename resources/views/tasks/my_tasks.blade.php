@@ -93,7 +93,10 @@
                         <span class="task-title">{{ $task->title }}</span>
                         <span class="category-badge">{{ $task->categoryLabel() }}</span>
                     </div>
-                    <span class="status-badge">{{ $task->status }}</span>
+                    <div>
+                        <a href="{{ route('tasks.flyer', $task) }}" target="_blank" class="btn btn-outline btn-sm" style="margin-right: 10px;">🖨️ Print Flyer</a>
+                        <span class="status-badge">{{ $task->status }}</span>
+                    </div>
                 </div>
                 <div class="task-meta">
                     {{ $task->location }}, {{ $task->district }} &middot; ৳{{ $task->wage }} &middot;

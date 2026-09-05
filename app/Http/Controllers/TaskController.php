@@ -11,18 +11,15 @@ class TaskController extends Controller
 {
     public function home(Request $request)
     {
-        // If the user is not logged in, do not show any tasks on the public home feed
         if (!Auth::check()) {
-            $tasks = collect(); // Empty collection
+            $tasks = collect();
             return view('home', compact('tasks'));
         }
 
         $query = Task::query();
 
-        // Hide tasks that the user posted themselves
         $query->where('employer_id', '!=', Auth::id());
 
-        // Hide tasks that the user has already taken as a worker
         $userTakenTaskIds = \App\Models\TaskWorker::where('worker_id', Auth::id())
             ->where('status', '!=', 'cancelled')
             ->pluck('task_id');
@@ -75,7 +72,6 @@ class TaskController extends Controller
 
     public function myTasks()
     {
-        // 1. Jobs posted by the user (Employer view)
         $tasks = Task::where('employer_id', Auth::id())
             ->with(['taskWorkers.worker'])
             ->latest()
@@ -86,7 +82,6 @@ class TaskController extends Controller
             ->get()
             ->groupBy(fn ($payment) => "{$payment->task_id}-{$payment->worker_id}");
 
-        // 2. Jobs taken by the user as a worker (Worker view)
         $takenTaskWorkers = \App\Models\TaskWorker::where('worker_id', Auth::id())
             ->where('status', '!=', 'cancelled')
             ->with(['task.employer'])
@@ -94,5 +89,14 @@ class TaskController extends Controller
             ->get();
 
         return view('tasks.my_tasks', compact('tasks', 'payments', 'takenTaskWorkers'));
+    }
+
+    public function generateFlyer(Task $task)
+    {
+        abort_if($task->employer_id !== Auth::id(), 403, 'Only the employer can generate the flyer.');
+        
+        $task->load('employer');
+        
+        return view('tasks.flyer', compact('task'));
     }
 }
